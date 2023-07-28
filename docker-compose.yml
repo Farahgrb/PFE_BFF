@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOSTNAME=localhost
+    ports:
+      - "5432:5432"
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+    - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "postgres@postgres.com"
+      PGADMIN_DEFAULT_PASSWORD: "postgres"
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+#   azurite:
+#     image: mcr.microsoft.com/azure-storage/azurite
+#     container_name: Azurite_blob_storage
+#     ports:
+#       - "10000:10000"
+#     volumes:
+#       - azurite:/data
+
+#   classification:
+#     build:
+#       context: ./Classification_fastapi
+#     ports:
+#       - "9002:9002"
+
+#   asr:
+#     build:
+#       context: ./ASR_fastapi
+#     ports:
+#       - "9001:9001"
+
+#   bff:
+#     build:
+#       context: ./BFF
+#     ports:
+#       - "9000:9000"
+
+#   front:
+#     build:
+#       context: ./react-final
+#     ports:
+#       - "3000:3000"
+
+volumes:
+  #azurite:
+  postgres-db:
