@@ -78,37 +78,63 @@ from bidi.algorithm import get_display
 async def Home():
     return "welcome from BFF"
 
-@app.post("/transcribe")
-async def transcribe(file: UploadFile = File(...), device="cpu"):
-    print(file)
+# @app.post("/transcribe")
+# async def transcribe(file: UploadFile = File(...), device="cpu"):
+#     print(file)
 
-    async with ClientSession() as session:
-        request = getattr(session, "post")
-        async with request(
-                url=f"{asr_microservice_url}/transcribe",
-                data=await file_to_data(file),
-        ) as response:
-            response_text = await response.text(encoding='utf-8')
-            transcription = json.loads(response_text)
+#     async with ClientSession() as session:
+#         request = getattr(session, "post")
+#         async with request(
+#                 url=f"{asr_microservice_url}/transcribe",
+#                 data=await file_to_data(file),
+#         ) as response:
+#             response_text = await response.text(encoding='utf-8')
+#             transcription = json.loads(response_text)
 
-            reshaped_text = arabic_reshaper.reshape(transcription.get("Transcription"))
-            display_text = get_display(reshaped_text)
+#             reshaped_text = arabic_reshaper.reshape(transcription.get("Transcription"))
+#             display_text = get_display(reshaped_text)
 
-        async with ClientSession() as session2:
-            async with session2.post(
-                    url=f"{classification_microservice_url}/classify",
-                    json={"text": display_text},
-            ) as response1:
-                response1_text = await response1.text(encoding='utf-8')
-                label = json.loads(response1_text)
+#         async with ClientSession() as session2:
+#             print(display_text)
+#             async with session2.post(
+#                     url=f"{classification_microservice_url}/classify",
+#                     json={"text": display_text},
+#             ) as response1:
+#                 response1_text = await response1.text(encoding='utf-8')
+#                 print(response1_text)
+#                 label = json.loads(response1_text)
      
         
 
+#         return {"Transcription": transcription["Transcription"], "label": label["label"]}
+
+
+@app.post("/transcribe")
+async def transcribe(file: UploadFile = File(...), device="cpu"):
+    try:
+        async with ClientSession() as session:
+            # Transcribe the audio file using ASR microservice
+            async with session.post(
+                url=f"{asr_microservice_url}/transcribe",
+                data=await file_to_data(file),
+            ) as response:
+                response.raise_for_status()
+                transcription = await response.json()
+                reshaped_text = arabic_reshaper.reshape(transcription.get("Transcription"))
+                display_text = get_display(reshaped_text)
+
+            # Classify the transcribed text using classification microservice
+            async with session.post(
+                url=f"{classification_microservice_url}/detection/classify_create",
+                json={"text": reshaped_text},
+            ) as response1:
+                response1.raise_for_status()
+                label = await response1.json()
+
         return {"Transcription": transcription["Transcription"], "label": label["label"]}
-
-
-
-
+    
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.post("/file-upload")
@@ -126,14 +152,14 @@ async def classify_text(text_input: dict):
     try:
         
         # text_input = await request.json()
-        print(f"{classification_microservice_url}/detection/classify_create")
+     
         response = requests.post(f"{classification_microservice_url}/detection/classify_create", json=text_input)
         response.raise_for_status()
         print(text_input)
         result = response.text
 
         api_response_dict = json.loads(result)
-        print(type(api_response_dict))
+      
         return api_response_dict
     except requests.exceptions.RequestException as e:
         # Handle errors from the classification microservice
@@ -162,7 +188,7 @@ def get_rows():
     # Check if the request was successful (status code 200)
     try:
         db_response = response.json()  # Assuming the response is in JSON format
-        print(db_response)
+       
         return db_response
     except requests.exceptions.RequestException as e:
         return e
