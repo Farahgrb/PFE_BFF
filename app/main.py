@@ -35,11 +35,13 @@ origins = [
     "http://localhost:3000",  # Update with your React app's URL
     # Add more origins if needed
 ]
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -171,7 +173,7 @@ def delete_row(request:id_text):
     db_response_del = requests.delete(f"{classification_microservice_url}/detection/delete", json=request.dict())
     return Response(status="Ok", code="200", message="Success delete data").dict(exclude_none=True)
 
-@app.patch("/update-bff")
+@app.patch("/update")
 async def update_detection_bff(request: dict):
 
     try:
